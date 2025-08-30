@@ -93,7 +93,7 @@ export default function ChatInterface() {
           onKeyPress={handleKeyPress}
           onScrollToBottom={scrollToBottom}
           disabled={isLoading}
-          placeholder="Ask about the weather..."
+          placeholder="Ask about weather..."
         />
         
         {error && (
