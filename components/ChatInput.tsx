@@ -7,6 +7,7 @@ interface ChatInputProps {
   onChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
+  onScrollToBottom?: () => void;
   disabled: boolean;
   placeholder: string;
 }
@@ -16,6 +17,7 @@ export default function ChatInput({
   onChange, 
   onSend, 
   onKeyPress, 
+  onScrollToBottom, 
   disabled, 
   placeholder 
 }: ChatInputProps) {
@@ -23,6 +25,10 @@ export default function ChatInput({
     e.preventDefault();
     if (!disabled && value.trim()) {
       onSend();
+      // Scroll to bottom when send button is clicked
+      if (onScrollToBottom) {
+        onScrollToBottom();
+      }
     }
   };
 

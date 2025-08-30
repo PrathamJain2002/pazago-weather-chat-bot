@@ -51,47 +51,47 @@ export default function ChatMessage({ message, onRetry }: ChatMessageProps) {
   };
 
   const WeatherDataDisplay = ({ weatherData }: { weatherData: NonNullable<Message['weatherData']> }) => (
-    <div className="mt-3 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-        <div className="flex items-center space-x-2">
+    <div className="mt-3 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200 overflow-hidden">
+      <div className="flex flex-col space-y-3 text-xs sm:text-sm">
+        <div className="flex items-center space-x-2 min-w-0">
           <Thermometer className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
-          <span className="font-medium min-w-0">Temperature:</span>
-          <span className="font-semibold">{weatherData.temperature}°C</span>
+          <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Temperature:</span>
+          <span className="font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.temperature}°C</span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0">
           <Thermometer className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
-          <span className="font-medium min-w-0">Feels like:</span>
-          <span className="font-semibold">{weatherData.feelsLike}°C</span>
+          <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Feels like:</span>
+          <span className="font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.feelsLike}°C</span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0">
           <Droplets className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
-          <span className="font-medium min-w-0">Humidity:</span>
-          <span className="font-semibold">{weatherData.humidity}%</span>
+          <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Humidity:</span>
+          <span className="font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.humidity}%</span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0">
           <Wind className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
-          <span className="font-medium min-w-0">Wind:</span>
-          <span className="font-semibold">{weatherData.windSpeed} km/h</span>
+          <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Wind:</span>
+          <span className="font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.windSpeed} km/h</span>
         </div>
         {weatherData.windGust > weatherData.windSpeed && (
-          <div className="flex items-center space-x-2 col-span-1 sm:col-span-2">
+          <div className="flex items-center space-x-2 min-w-0">
             <Wind className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
-            <span className="font-medium min-w-0">Wind gusts:</span>
-            <span className="font-semibold">{weatherData.windGust} km/h</span>
+            <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Wind gusts:</span>
+            <span className="font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.windGust} km/h</span>
           </div>
         )}
-        <div className="flex items-center space-x-2 col-span-1 sm:col-span-2">
+        <div className="flex items-center space-x-2 min-w-0">
           <Cloud className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
-          <span className="font-medium min-w-0">Conditions:</span>
-          <span className="capitalize font-semibold">{weatherData.conditions}</span>
+          <span className="font-medium min-w-0 truncate sm:truncate-none flex-1">Conditions:</span>
+          <span className="capitalize font-semibold ml-auto sm:ml-1 flex-shrink-0">{weatherData.conditions}</span>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex items-start space-x-3 max-w-[80%] ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2 sm:mb-0`}>
+      <div className={`flex items-start space-x-3 max-w-[90%] sm:max-w-[80%] ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
         {/* Avatar */}
         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
           isUser 

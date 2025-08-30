@@ -8,9 +8,10 @@ interface ChatMessagesProps {
   isLoading: boolean;
   isStreaming: boolean;
   onRetryMessage: (messageId: string) => Promise<void>;
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
-export default function ChatMessages({ messages, isLoading, isStreaming, onRetryMessage }: ChatMessagesProps) {
+export default function ChatMessages({ messages, isLoading, isStreaming, onRetryMessage, containerRef }: ChatMessagesProps) {
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -21,7 +22,7 @@ export default function ChatMessages({ messages, isLoading, isStreaming, onRetry
         </div>
         <h3 className="text-xl font-semibold text-gray-700 mb-2">Welcome to Weather Agent!</h3>
         <p className="text-gray-500 max-w-md">
-          I'm here to help you with weather information. Try asking me about the weather in your city, 
+          I&apos;m here to help you with weather information. Try asking me about the weather in your city, 
           upcoming forecasts, or any weather-related questions.
         </p>
         <div className="mt-6 space-y-2">
@@ -46,7 +47,7 @@ export default function ChatMessages({ messages, isLoading, isStreaming, onRetry
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
       {messages.map((message) => (
         <ChatMessage
           key={message.id}
@@ -57,7 +58,7 @@ export default function ChatMessages({ messages, isLoading, isStreaming, onRetry
       
       {isLoading && !isStreaming && (
         <div className="flex justify-center">
-          <div className="flex items-center space-x-2 text-gray-500">
+          <div className="flex items-center space-x-4 text-gray-500">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
             <span className="text-sm">Processing...</span>
           </div>

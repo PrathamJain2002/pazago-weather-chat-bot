@@ -20,17 +20,37 @@ export default function ChatInterface() {
 
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom();
   }, [messages]);
+
+  // Scroll to bottom immediately when send button is clicked
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Scroll to bottom instantly (for immediate response)
+  const scrollToBottomInstant = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
     
     const messageContent = inputValue.trim();
     setInputValue('');
+    
+    // Scroll to bottom immediately when sending message
+    // Use setTimeout to ensure it runs after state update
+    setTimeout(() => scrollToBottomInstant(), 0);
+    
     await sendMessage(messageContent);
   };
 
@@ -61,6 +81,7 @@ export default function ChatInterface() {
           isLoading={isLoading}
           isStreaming={isStreaming}
           onRetryMessage={retryMessage}
+          containerRef={messagesContainerRef}
         />
         
         <div ref={messagesEndRef} />
@@ -70,6 +91,7 @@ export default function ChatInterface() {
           onChange={setInputValue}
           onSend={handleSendMessage}
           onKeyPress={handleKeyPress}
+          onScrollToBottom={scrollToBottom}
           disabled={isLoading}
           placeholder="Ask about the weather..."
         />
