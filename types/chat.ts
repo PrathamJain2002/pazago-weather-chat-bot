@@ -17,6 +17,15 @@ export interface Message {
   weatherData?: WeatherData;
 }
 
+export interface Thread {
+  id: string;
+  name: string;
+  messages: Message[];
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+}
+
 export interface ChatRequest {
   messages: Array<{
     role: 'user';
@@ -39,18 +48,24 @@ export interface ChatResponse {
 }
 
 export interface ChatState {
-  messages: Message[];
+  threads: Thread[];
+  activeThreadId: string | null;
   isLoading: boolean;
   error: string | null;
   isStreaming: boolean;
 }
 
 export interface UseChatReturn {
-  messages: Message[];
+  threads: Thread[];
+  activeThread: Thread | null;
   isLoading: boolean;
   error: string | null;
   isStreaming: boolean;
   sendMessage: (content: string) => Promise<void>;
+  createThread: (name?: string) => string;
+  switchThread: (threadId: string) => void;
+  deleteThread: (threadId: string) => void;
+  renameThread: (threadId: string, name: string) => void;
   clearChat: () => void;
   retryMessage: (messageId: string) => Promise<void>;
 }

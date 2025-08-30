@@ -5,15 +5,21 @@ import { useChat } from '../hooks/useChat';
 import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
+import ThreadSidebar from './ThreadSidebar';
 import ErrorBoundary from './ErrorBoundary';
 
 export default function ChatInterface() {
   const {
-    messages,
+    threads,
+    activeThread,
     isLoading,
     error,
     isStreaming,
     sendMessage,
+    createThread,
+    switchThread,
+    deleteThread,
+    renameThread,
     clearChat,
     retryMessage,
   } = useChat();
@@ -25,7 +31,7 @@ export default function ChatInterface() {
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [activeThread?.messages]);
 
   // Scroll to bottom immediately when send button is clicked
   const scrollToBottom = () => {
@@ -62,7 +68,7 @@ export default function ChatInterface() {
   };
 
   const handleClearChat = () => {
-    if (messages.length > 0) {
+    if (activeThread && activeThread.messages.length > 0) {
       clearChat();
     }
   };
@@ -71,13 +77,14 @@ export default function ChatInterface() {
     <ErrorBoundary>
       <div className="flex flex-col h-screen max-w-4xl mx-auto bg-white shadow-xl">
         <ChatHeader 
-          messageCount={messages.length}
+          messageCount={activeThread?.messages.length || 0}
           onClearChat={handleClearChat}
-          hasMessages={messages.length > 0}
+          hasMessages={activeThread ? activeThread.messages.length > 0 : false}
+          threadName={activeThread?.name}
         />
         
         <ChatMessages
-          messages={messages}
+          messages={activeThread?.messages || []}
           isLoading={isLoading}
           isStreaming={isStreaming}
           onRetryMessage={retryMessage}
@@ -104,6 +111,16 @@ export default function ChatInterface() {
           </div>
         )}
       </div>
+
+      {/* Thread Sidebar */}
+      <ThreadSidebar
+        threads={threads}
+        activeThreadId={activeThread?.id || null}
+        onSwitchThread={switchThread}
+        onCreateThread={createThread}
+        onDeleteThread={deleteThread}
+        onRenameThread={renameThread}
+      />
     </ErrorBoundary>
   );
 }

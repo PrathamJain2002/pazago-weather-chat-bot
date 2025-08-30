@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { Message, ChatRequest, ChatState, UseChatReturn, WeatherData } from '../types/chat';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Message, Thread, ChatRequest, ChatState, UseChatReturn, WeatherData } from '../types/chat';
 import { API_CONFIG } from '../config/api';
 
 interface ParsedResponse {
@@ -10,11 +10,33 @@ interface ParsedResponse {
 
 export function useChat(): UseChatReturn {
   const [state, setState] = useState<ChatState>({
-    messages: [],
+    threads: [],
+    activeThreadId: null,
     isLoading: false,
     error: null,
     isStreaming: false,
   });
+
+  // Initialize with a default thread if none exists
+  useEffect(() => {
+    if (state.threads.length === 0) {
+      const defaultThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const defaultThread: Thread = {
+        id: defaultThreadId,
+        name: 'Weather Chat',
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true,
+      };
+      
+      setState(prev => ({
+        ...prev,
+        threads: [defaultThread],
+        activeThreadId: defaultThreadId,
+      }));
+    }
+  }, []);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -27,22 +49,42 @@ export function useChat(): UseChatReturn {
       timestamp: new Date(),
     };
     
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, newMessage],
-    }));
+    if (state.activeThreadId) {
+      setState(prev => ({
+        ...prev,
+        threads: prev.threads.map(thread =>
+          thread.id === state.activeThreadId
+            ? {
+                ...thread,
+                messages: [...thread.messages, newMessage],
+                updatedAt: new Date(),
+              }
+            : thread
+        ),
+      }));
+    }
     
     return newMessage;
-  }, []);
+  }, [state.activeThreadId]);
 
   const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
-    setState(prev => ({
-      ...prev,
-      messages: prev.messages.map(msg =>
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      ),
-    }));
-  }, []);
+    if (state.activeThreadId) {
+      setState(prev => ({
+        ...prev,
+        threads: prev.threads.map(thread =>
+          thread.id === state.activeThreadId
+            ? {
+                ...thread,
+                messages: thread.messages.map(msg =>
+                  msg.id === messageId ? { ...msg, ...updates } : msg
+                ),
+                updatedAt: new Date(),
+              }
+            : thread
+        ),
+      }));
+    }
+  }, [state.activeThreadId]);
 
   const parseStreamingResponse = useCallback((chunk: string): ParsedResponse => {
     const lines = chunk.split('\n').filter(line => line.trim());
@@ -229,37 +271,118 @@ export function useChat(): UseChatReturn {
     }
   }, [addMessage, updateMessage, parseStreamingResponse]);
 
-  const clearChat = useCallback(() => {
-    setState({
+  const createThread = useCallback((name?: string) => {
+    const threadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const threadName = name || `Weather Chat ${state.threads.length + 1}`;
+    
+    const newThread: Thread = {
+      id: threadId,
+      name: threadName,
       messages: [],
-      isLoading: false,
-      error: null,
-      isStreaming: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+    };
+    
+    setState(prev => ({
+      ...prev,
+      threads: prev.threads.map(t => ({ ...t, isActive: false })).concat([newThread]),
+      activeThreadId: threadId,
+    }));
+    
+    return threadId;
+  }, [state.threads.length]);
+
+  const switchThread = useCallback((threadId: string) => {
+    setState(prev => ({
+      ...prev,
+      threads: prev.threads.map(thread => ({
+        ...thread,
+        isActive: thread.id === threadId,
+      })),
+      activeThreadId: threadId,
+    }));
+  }, []);
+
+  const deleteThread = useCallback((threadId: string) => {
+    setState(prev => {
+      const remainingThreads = prev.threads.filter(t => t.id !== threadId);
+      const newActiveThreadId = prev.activeThreadId === threadId 
+        ? (remainingThreads.length > 0 ? remainingThreads[0].id : null)
+        : prev.activeThreadId;
+      
+      return {
+        ...prev,
+        threads: remainingThreads,
+        activeThreadId: newActiveThreadId,
+      };
     });
   }, []);
 
+  const renameThread = useCallback((threadId: string, name: string) => {
+    setState(prev => ({
+      ...prev,
+      threads: prev.threads.map(thread =>
+        thread.id === threadId ? { ...thread, name } : thread
+      ),
+    }));
+  }, []);
+
+  const clearChat = useCallback(() => {
+    if (state.activeThreadId) {
+      setState(prev => ({
+        ...prev,
+        threads: prev.threads.map(thread =>
+          thread.id === state.activeThreadId
+            ? { ...thread, messages: [], updatedAt: new Date() }
+            : thread
+        ),
+      }));
+    }
+  }, [state.activeThreadId]);
+
   const retryMessage = useCallback(async (messageId: string) => {
-    const messageToRetry = state.messages.find(msg => msg.id === messageId);
+    if (!state.activeThreadId) return;
+    
+    const activeThread = state.threads.find(t => t.id === state.activeThreadId);
+    if (!activeThread) return;
+    
+    const messageToRetry = activeThread.messages.find(msg => msg.id === messageId);
     if (!messageToRetry || messageToRetry.role !== 'user') return;
 
     // Remove the failed agent response
     setState(prev => ({
       ...prev,
-      messages: prev.messages.filter(msg => 
-        !(msg.role === 'agent' && msg.id > messageId)
+      threads: prev.threads.map(thread =>
+        thread.id === state.activeThreadId
+          ? {
+              ...thread,
+              messages: thread.messages.filter(msg => 
+                !(msg.role === 'agent' && msg.id > messageId)
+              ),
+              updatedAt: new Date(),
+            }
+          : thread
       ),
     }));
 
     // Retry sending the message
     await sendMessage(messageToRetry.content);
-  }, [state.messages, sendMessage]);
+  }, [state.activeThreadId, state.threads, sendMessage]);
+
+  const activeThread = state.threads.find(t => t.id === state.activeThreadId) || null;
 
   return {
-    messages: state.messages,
+    threads: state.threads,
+    activeThread,
     isLoading: state.isLoading,
     error: state.error,
     isStreaming: state.isStreaming,
     sendMessage,
+    createThread,
+    switchThread,
+    deleteThread,
+    renameThread,
     clearChat,
     retryMessage,
   };
