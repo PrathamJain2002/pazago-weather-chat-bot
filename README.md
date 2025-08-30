@@ -38,6 +38,8 @@ This project was built for the **Frontend Engineer Assignment: Weather Agent Cha
 - **Streaming Responses**: Real-time streaming of weather information from the API
 - **Responsive Design**: Mobile-first approach that works on all devices
 - **Message Management**: Conversation history with timestamps and retry functionality
+- **Multiple Message Threads**: Create, switch, delete, and rename conversation threads
+- **Thread Sidebar**: Professional thread management interface with smooth animations
 - **Auto-scroll**: Automatic scrolling to the latest messages
 - **Error Handling**: Comprehensive error management with retry options
 - **Loading States**: Visual feedback during API calls
@@ -112,6 +114,13 @@ NEXT_PUBLIC_API_ENDPOINT=https://millions-screeching-vultur.mastra.cloud/api/age
 - "Humidity levels in Paris?"
 - "Wind speed in Berlin?"
 
+### Thread Management
+- **Create New Threads**: Click the "+" button in the thread sidebar
+- **Switch Between Threads**: Click any thread name to switch conversations
+- **Rename Threads**: Click the edit icon to customize thread names
+- **Delete Threads**: Remove unwanted threads (safety: can't delete last thread)
+- **Thread Organization**: Keep separate weather conversations organized
+
 ### Supported Cities
 The weather agent supports queries for major cities worldwide including:
 - **Europe**: London, Paris, Berlin, Rome, Madrid, Amsterdam
@@ -134,6 +143,7 @@ weather-agent-chat/
 │   ├── ChatMessages.tsx   # Message list container
 │   ├── ChatMessage.tsx    # Individual message display
 │   ├── ChatInput.tsx      # Message input component
+│   ├── ThreadSidebar.tsx  # Thread management interface
 │   ├── TypingIndicator.tsx # Loading animation
 │   └── ErrorBoundary.tsx  # Error handling wrapper
 ├── hooks/                  # Custom React hooks
@@ -163,6 +173,7 @@ weather-agent-chat/
 ### Components
 - **Chat Messages**: Distinct styling for user (right) and agent (left)
 - **Input Field**: Auto-resizing textarea with send button
+- **Thread Sidebar**: Professional thread management with smooth animations
 - **Loading States**: Smooth animations and visual feedback
 - **Error Handling**: Clear error messages with retry options
 
@@ -184,9 +195,10 @@ weather-agent-chat/
 ### Manual Testing
 1. **Start the app**: `npm run dev`
 2. **Test weather queries**: Try different cities and weather types
-3. **Test responsiveness**: Resize browser window
-4. **Test error handling**: Disconnect internet temporarily
-5. **Test keyboard shortcuts**: Enter to send, Shift+Enter for new line
+3. **Test thread management**: Create, rename, and switch between threads
+4. **Test responsiveness**: Resize browser window
+5. **Test error handling**: Disconnect internet temporarily
+6. **Test keyboard shortcuts**: Enter to send, Shift+Enter for new line
 
 ### API Testing
 Test the weather agent API directly:
@@ -304,6 +316,8 @@ This project is licensed under the MIT License.
 - API integration with streaming responses
 - Loading states and error handling
 - Message management and clear chat functionality
+- Multiple message threads with full CRUD operations
+- Professional thread management interface
 
 ### ✅ UI/UX Requirements (100% Complete)
 - Mobile-first responsive design (320px+ support)
@@ -322,6 +336,8 @@ This project is licensed under the MIT License.
 ### 🌟 Bonus Features Implemented
 - TypeScript implementation
 - Custom React hooks (`useChat`)
+- Multiple message threads with professional UI
+- Thread management (create, switch, delete, rename)
 - Accessibility features (ARIA labels, keyboard navigation)
 - Real-time streaming response display
 - Smooth animations and professional polish
