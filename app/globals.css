@@ -14,15 +14,26 @@
 
 @layer components {
   .chat-message {
-    @apply max-w-[80%] rounded-lg px-4 py-2 shadow-sm;
+    @apply rounded-lg px-4 py-2 shadow-sm;
+    min-width: fit-content;
   }
   
   .user-message {
     @apply bg-primary-500 text-white ml-auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: none;
+    width: fit-content;
+    max-width: 100%;
   }
   
   .agent-message {
     @apply bg-white text-gray-800 border border-gray-200;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: none;
+    width: fit-content;
+    max-width: 100%;
   }
   
   .typing-indicator {

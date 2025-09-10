@@ -2,6 +2,77 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message, Thread, ChatRequest, ChatState, UseChatReturn, WeatherData } from '../types/chat';
 import { API_CONFIG } from '../config/api';
 
+// localStorage utility functions
+const STORAGE_KEY = 'weather-chat-threads';
+
+const saveThreadsToStorage = (threads: Thread[]): void => {
+  try {
+    const serializedThreads = threads.map(thread => ({
+      ...thread,
+      messages: thread.messages.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp.toISOString()
+      })),
+      createdAt: thread.createdAt.toISOString(),
+      updatedAt: thread.updatedAt.toISOString()
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializedThreads));
+  } catch (error) {
+    console.warn('Failed to save threads to localStorage:', error);
+  }
+};
+
+const loadThreadsFromStorage = (): Thread[] => {
+  try {
+    // Check if localStorage is available
+    if (typeof window === 'undefined' || !window.localStorage) {
+      console.warn('localStorage is not available');
+      return [];
+    }
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    
+    const parsedThreads = JSON.parse(stored);
+    
+    // Validate that parsed data has the expected structure
+    if (!Array.isArray(parsedThreads)) {
+      console.warn('Invalid threads data in localStorage, clearing...');
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+    
+    return parsedThreads.map((thread: any) => ({
+      ...thread,
+      messages: thread.messages.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      })),
+      createdAt: new Date(thread.createdAt),
+      updatedAt: new Date(thread.updatedAt)
+    }));
+  } catch (error) {
+    console.warn('Failed to load threads from localStorage:', error);
+    // Clear corrupted data
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (clearError) {
+      console.warn('Failed to clear corrupted localStorage data:', clearError);
+    }
+    return [];
+  }
+};
+
+const clearThreadsFromStorage = (): void => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch (error) {
+    console.warn('Failed to clear threads from localStorage:', error);
+  }
+};
+
 interface ParsedResponse {
   weatherData?: WeatherData;
   conversationalText: string;
@@ -17,9 +88,27 @@ export function useChat(): UseChatReturn {
     isStreaming: false,
   });
 
-  // Initialize with a default thread if none exists
+  // Initialize with threads from localStorage or create default thread
   useEffect(() => {
-    if (state.threads.length === 0) {
+    const savedThreads = loadThreadsFromStorage();
+    
+    if (savedThreads.length > 0) {
+      // Load saved threads and set the most recently updated one as active
+      const sortedThreads = savedThreads.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      const activeThread = sortedThreads[0];
+      
+      setState(prev => ({
+        ...prev,
+        threads: sortedThreads.map(thread => ({
+          ...thread,
+          isActive: thread.id === activeThread.id
+        })),
+        activeThreadId: activeThread.id,
+      }));
+    } else {
+      // Create default thread if no saved threads exist
       const defaultThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const defaultThread: Thread = {
         id: defaultThreadId,
@@ -37,6 +126,13 @@ export function useChat(): UseChatReturn {
       }));
     }
   }, []);
+
+  // Save threads to localStorage whenever threads change
+  useEffect(() => {
+    if (state.threads.length > 0) {
+      saveThreadsToStorage(state.threads);
+    }
+  }, [state.threads]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -341,6 +437,15 @@ export function useChat(): UseChatReturn {
     }
   }, [state.activeThreadId]);
 
+  const clearAllData = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      threads: [],
+      activeThreadId: null,
+    }));
+    clearThreadsFromStorage();
+  }, []);
+
   const retryMessage = useCallback(async (messageId: string) => {
     if (!state.activeThreadId) return;
     
@@ -384,6 +489,7 @@ export function useChat(): UseChatReturn {
     deleteThread,
     renameThread,
     clearChat,
+    clearAllData,
     retryMessage,
   };
 }

@@ -67,5 +67,6 @@ export interface UseChatReturn {
   deleteThread: (threadId: string) => void;
   renameThread: (threadId: string, name: string) => void;
   clearChat: () => void;
+  clearAllData: () => void;
   retryMessage: (messageId: string) => Promise<void>;
 }

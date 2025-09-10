@@ -30,8 +30,8 @@ export default function ChatMessages({ messages, isLoading, isStreaming, onRetry
           <div className="flex flex-wrap gap-2 justify-center">
             {[
               "What's the weather in London?",
-              "Will it rain tomorrow?",
-              "Weather forecast for next week"
+              "What's the weather in Mumbai?",
+              "Temperature in Pune?"
             ].map((example, index) => (
               <span
                 key={index}
