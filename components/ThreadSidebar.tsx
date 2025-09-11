@@ -55,11 +55,13 @@ export default function ThreadSidebar({
 
   return (
     <>
-      {/* Toggle Button */}
+      {/* Toggle Button - Only show when sidebar is closed */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
-        title="Toggle Threads"
+        className={`fixed top-4 left-4 z-50 p-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 ${
+          isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+        }`}
+        title="Open Threads"
       >
         <MessageCircle className="w-5 h-5" />
       </button>
@@ -72,13 +74,22 @@ export default function ThreadSidebar({
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800">Chat Threads</h2>
-            <button
-              onClick={handleCreateThread}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="New Thread"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleCreateThread}
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="New Thread"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Close Threads"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Thread List */}
