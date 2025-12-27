@@ -64,9 +64,16 @@ This project was built for the **Frontend Engineer Assignment: Weather Agent Cha
    ```
 
 3. **Configure the API**:
-   - Open `config/api.ts`
-   - Update `THREAD_ID` with your college roll number
-   - Verify the external API endpoint is correct
+   - Create a `.env.local` file in the root directory
+   - Add your Google GenAI API key (server-side, more secure):
+     ```env
+     GOOGLE_GENAI_API_KEY=your_api_key_here
+     ```
+     Or use the public version (less secure, but works):
+     ```env
+     NEXT_PUBLIC_GOOGLE_GENAI_API_KEY=your_api_key_here
+     ```
+   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 4. **Start the development server**:
    ```bash
@@ -81,29 +88,31 @@ This project was built for the **Frontend Engineer Assignment: Weather Agent Cha
 
 ```typescript
 export const API_CONFIG = {
-  EXTERNAL: {
-    endpoint: 'https://millions-screeching-vultur.mastra.cloud/api/agents/weatherAgent/stream',
+  GOOGLE_GENAI: {
+    model: 'gemini-3-flash-preview',
     enabled: true,
-    timeout: 10000,
-    retries: 2,
   },
   REQUEST: {
-    maxRetries: 2,
-    maxSteps: 5,
     temperature: 0.5,
     topP: 1,
-    runId: 'weatherAgent',
-    resourceId: 'weatherAgent',
   },
-  THREAD_ID: 'YOUR_COLLEGE_ROLL_NUMBER', // Update this!
 };
 ```
 
+**Note**: The API key must be set in `.env.local` as `GOOGLE_GENAI_API_KEY` (preferred, server-side only) or `NEXT_PUBLIC_GOOGLE_GENAI_API_KEY`. The API is called via a Next.js API route (`/api/chat`) to avoid CORS issues.
+
 ### Environment Variables
-Create a `.env.local` file for any additional configuration:
+Create a `.env.local` file in the root directory:
 ```env
-NEXT_PUBLIC_API_ENDPOINT=https://millions-screeching-vultur.mastra.cloud/api/agents/weatherAgent/stream
+GOOGLE_GENAI_API_KEY=your_api_key_here
 ```
+
+**Important**: 
+- Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Use `GOOGLE_GENAI_API_KEY` (server-side only, more secure) or `NEXT_PUBLIC_GOOGLE_GENAI_API_KEY` (client-accessible)
+- Never commit `.env.local` to version control
+- The API key is required for the chat interface to work
+- The API calls are made server-side via `/api/chat` route to avoid CORS issues
 
 ## 📱 Usage
 
@@ -250,9 +259,14 @@ The weather agent automatically recognizes city names mentioned in queries. No a
 ### Common Issues
 
 #### API Connection Errors
-- Verify the API endpoint is correct in `config/api.ts`
+- **"Connection error" or CORS errors**: The API is now called server-side via `/api/chat` route. Make sure:
+  - You've set `GOOGLE_GENAI_API_KEY` or `NEXT_PUBLIC_GOOGLE_GENAI_API_KEY` in `.env.local`
+  - Restart your dev server after adding the API key: `npm run dev`
+- **"API key is missing"**: Create `.env.local` file and add your Google GenAI API key
+- **"Module not found"**: Run `npm install` to install dependencies
+- **CORS errors**: These should be resolved as API calls are now made server-side
 - Check your internet connection
-- Ensure the API service is running
+- Verify your API key is valid at [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 #### Build Errors
 - Clear `.next` folder: `rm -rf .next`

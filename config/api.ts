@@ -1,24 +1,16 @@
 export const API_CONFIG = {
-  // External Weather Agent API
-  EXTERNAL: {
-    endpoint: 'https://millions-screeching-vultur.mastra.cloud/api/agents/weatherAgent/stream',
-    enabled: true, // Set to false to disable external API
-    timeout: 10000, // 10 seconds
-    retries: 2,
+  // Google GenAI Configuration
+  GOOGLE_GENAI: {
+    model: 'gemini-3-flash-preview',
+    enabled: true,
+    // API key should be set via environment variable GOOGLE_GENAI_API_KEY
   },
   
   // API Request Configuration
   REQUEST: {
-    maxRetries: 2,
-    maxSteps: 5,
     temperature: 0.5,
     topP: 1,
-    runId: 'weatherAgent',
-    resourceId: 'weatherAgent',
   },
-  
-  // Your college roll number - UPDATE THIS!
-  THREAD_ID: '60002200162', // Replace with your actual roll number
 };
 
 // export const WEATHER_CITIES = [

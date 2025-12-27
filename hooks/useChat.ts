@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Message, Thread, ChatRequest, ChatState, UseChatReturn, WeatherData } from '../types/chat';
+import { Message, Thread, ChatState, UseChatReturn, WeatherData } from '../types/chat';
 import { API_CONFIG } from '../config/api';
 
 // localStorage utility functions
@@ -73,11 +75,6 @@ const clearThreadsFromStorage = (): void => {
   }
 };
 
-interface ParsedResponse {
-  weatherData?: WeatherData;
-  conversationalText: string;
-  messageId?: string;
-}
 
 export function useChat(): UseChatReturn {
   const [state, setState] = useState<ChatState>({
@@ -182,41 +179,22 @@ export function useChat(): UseChatReturn {
     }
   }, [state.activeThreadId]);
 
-  const parseStreamingResponse = useCallback((chunk: string): ParsedResponse => {
-    const lines = chunk.split('\n').filter(line => line.trim());
-    let weatherData: WeatherData | undefined;
-    let conversationalText = '';
-    let messageId: string | undefined;
-
-    for (const line of lines) {
-      try {
-        if (line.startsWith('9:')) {
-          // Tool call with weather data
-          const toolCall = JSON.parse(line.substring(2));
-          if (toolCall.toolName === 'weatherTool' && toolCall.args?.location) {
-            // Weather tool call - we'll get the result in the next chunk
-          }
-        } else if (line.startsWith('a:')) {
-          // Tool result with detailed weather info
-          const result = JSON.parse(line.substring(2));
-          if (result.result && result.result.temperature !== undefined) {
-            weatherData = result.result;
-          }
-        } else if (line.startsWith('0:')) {
-          // Text chunk for conversational response
-          const text = line.substring(2).replace(/"/g, '');
-          conversationalText += text;
-        } else if (line.startsWith('f:')) {
-          // Message ID
-          const messageInfo = JSON.parse(line.substring(2));
-          messageId = messageInfo.messageId;
+  // Helper function to extract weather data from text response
+  const extractWeatherData = useCallback((text: string): WeatherData | undefined => {
+    // Try to extract weather data from JSON in the response
+    try {
+      // Look for JSON objects that might contain weather data
+      const jsonMatch = text.match(/\{[\s\S]*"temperature"[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.temperature !== undefined) {
+          return parsed as WeatherData;
         }
-      } catch (error) {
-        console.log('Error parsing line:', line, error);
       }
+    } catch (error) {
+      // If parsing fails, continue without weather data
     }
-
-    return { weatherData, conversationalText, messageId };
+    return undefined;
   }, []);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -250,91 +228,46 @@ export function useChat(): UseChatReturn {
 
       abortControllerRef.current = new AbortController();
 
-      const requestBody = {
-        messages: [
-          {
-            role: 'user',
-            content: content.trim(),
-          },
-        ],
-        runId: API_CONFIG.REQUEST.runId,
-        maxRetries: API_CONFIG.REQUEST.maxRetries,
-        maxSteps: API_CONFIG.REQUEST.maxSteps,
-        temperature: API_CONFIG.REQUEST.temperature,
-        topP: API_CONFIG.REQUEST.topP,
-        runtimeContext: {},
-        threadId: API_CONFIG.THREAD_ID,
-        resourceId: API_CONFIG.REQUEST.resourceId,
-      };
+      // Get the conversation history for context
+      const activeThread = state.threads.find(t => t.id === state.activeThreadId);
+      const conversationHistory = activeThread?.messages || [];
 
-      const headers = {
-        'Accept': '*/*',
-        'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,fr;q=0.7',
-        'Connection': 'keep-alive',
-        'Content-Type': 'application/json',
-        'x-mastra-dev-playground': 'true',
-      };
-
-      const response = await fetch(API_CONFIG.EXTERNAL.endpoint, {
+      // Call Next.js API route (server-side) to avoid CORS issues
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: content.trim(),
+          conversationHistory: conversationHistory.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        }),
         signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      if (!response.body) {
-        throw new Error('No response body received');
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get response from API');
       }
 
-      // Handle streaming response
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedChunks = '';
-      let finalWeatherData: WeatherData | undefined;
-      let finalConversationalText = '';
+      const responseText = data.text || 'No response received.';
+      
+      // Extract weather data if present in the response
+      const weatherData = extractWeatherData(responseText);
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
-          accumulatedChunks += chunk;
-          
-          // Parse the accumulated chunks
-          const parsed = parseStreamingResponse(accumulatedChunks);
-          
-          if (parsed.weatherData) {
-            finalWeatherData = parsed.weatherData;
-          }
-          
-          if (parsed.conversationalText) {
-            finalConversationalText = parsed.conversationalText;
-            
-            // Only update the message content if we have actual text
-            if (finalConversationalText.trim()) {
-              updateMessage(agentMessage.id, {
-                content: finalConversationalText,
-                weatherData: finalWeatherData,
-                isStreaming: true,
-              });
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      // Finalize the agent message with complete response and weather data
-      const finalContent = finalConversationalText || 'Weather information received.';
+      // Update the agent message with the complete response
       updateMessage(agentMessage.id, {
-        content: finalContent,
-        weatherData: finalWeatherData,
+        content: responseText,
+        weatherData: weatherData,
         isStreaming: false,
       });
 
@@ -346,9 +279,23 @@ export function useChat(): UseChatReturn {
 
       console.error('Error sending message:', error);
       
+      // Extract more detailed error message
+      let errorMessage = 'Sorry, I encountered an error. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Check for common error types
+        if (error.message.includes('API key')) {
+          errorMessage = 'API key is missing or invalid. Please configure NEXT_PUBLIC_GOOGLE_GENAI_API_KEY.';
+        } else if (error.message.includes('Connection') || error.message.includes('network')) {
+          errorMessage = 'Connection error. Please check your internet connection and API configuration.';
+        } else if (error.message.includes('model')) {
+          errorMessage = 'Model error. Please check if the model name is correct.';
+        }
+      }
+      
       // Update agent message with error
       updateMessage(agentMessage.id, {
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: errorMessage,
         isStreaming: false,
       });
 
@@ -365,7 +312,7 @@ export function useChat(): UseChatReturn {
       
       abortControllerRef.current = null;
     }
-  }, [addMessage, updateMessage, parseStreamingResponse]);
+  }, [addMessage, updateMessage, extractWeatherData, state.threads, state.activeThreadId]);
 
   const createThread = useCallback((name?: string) => {
     const threadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
