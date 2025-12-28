@@ -285,7 +285,7 @@ export function useChat(): UseChatReturn {
         errorMessage = error.message;
         // Check for common error types
         if (error.message.includes('API key')) {
-          errorMessage = 'API key is missing or invalid. Please configure NEXT_PUBLIC_GOOGLE_GENAI_API_KEY.';
+          errorMessage = 'API key is missing or invalid. Please configure GOOGLE_GENAI_API_KEY in .env.local';
         } else if (error.message.includes('Connection') || error.message.includes('network')) {
           errorMessage = 'Connection error. Please check your internet connection and API configuration.';
         } else if (error.message.includes('model')) {

@@ -4,9 +4,9 @@ import { API_CONFIG } from '@/config/api';
 
 // Initialize Google GenAI client (server-side only)
 function getGenAIClient(): GoogleGenAI {
-  const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
+  const apiKey = process.env.GOOGLE_GENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('Google GenAI API key is not configured. Please set GOOGLE_GENAI_API_KEY or NEXT_PUBLIC_GOOGLE_GENAI_API_KEY environment variable.');
+    throw new Error('Google GenAI API key is not configured. Please set GOOGLE_GENAI_API_KEY environment variable in .env.local');
   }
   return new GoogleGenAI({ apiKey });
 }
